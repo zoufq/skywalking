@@ -60,8 +60,10 @@ public class SkyWalkingAgent {
     public static void premain(String agentArgs, Instrumentation instrumentation) throws PluginException {
         final PluginFinder pluginFinder;
         try {
+            // 配置相关config，包括通过java javaagent一些启动参数
             SnifferConfigInitializer.initialize(agentArgs);
 
+            // 加载所有plugin，即apm-sdk-plugin module
             pluginFinder = new PluginFinder(new PluginBootstrap().loadPlugins());
 
         } catch (AgentPackageNotFoundException ape) {
@@ -72,6 +74,7 @@ public class SkyWalkingAgent {
             return;
         }
 
+        // 生成ByteBuddy
         final ByteBuddy byteBuddy = new ByteBuddy().with(TypeValidation.of(Config.Agent.IS_OPEN_DEBUGGING_CLASS));
 
         AgentBuilder agentBuilder = new AgentBuilder.Default(byteBuddy).ignore(
@@ -86,6 +89,7 @@ public class SkyWalkingAgent {
 
         JDK9ModuleExporter.EdgeClasses edgeClasses = new JDK9ModuleExporter.EdgeClasses();
         try {
+            // 植入ByteBuddy运行时代码
             agentBuilder = BootstrapInstrumentBoost.inject(pluginFinder, instrumentation, agentBuilder, edgeClasses);
         } catch (Exception e) {
             logger.error(e, "SkyWalking agent inject bootstrap instrumentation failure. Shutting down.");
@@ -106,6 +110,7 @@ public class SkyWalkingAgent {
                     .installOn(instrumentation);
 
         try {
+            // 启动相关服务，即所有实现BootService的接口
             ServiceManager.INSTANCE.boot();
         } catch (Exception e) {
             logger.error(e, "Skywalking agent boot failure.");

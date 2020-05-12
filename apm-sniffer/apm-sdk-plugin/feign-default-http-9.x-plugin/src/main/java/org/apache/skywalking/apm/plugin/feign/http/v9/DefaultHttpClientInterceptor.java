@@ -43,6 +43,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * 这里解释了http调用时trace的信息是如何传输的：通过header进行传递，只不过这里不是通过拦截器的方式，
+ * 而是在LoadBalancerFeignClient调用execute的方法时，通过ByteBuddy字节码重写来达到将trace信息存入header的目的。
  * {@link DefaultHttpClientInterceptor} intercept the default implementation of http calls by the Feign.
  */
 public class DefaultHttpClientInterceptor implements InstanceMethodsAroundInterceptor {
@@ -82,6 +84,7 @@ public class DefaultHttpClientInterceptor implements InstanceMethodsAroundInterc
         Tags.URL.set(span, request.url());
         SpanLayer.asHttp(span);
 
+        // 通过ByteBuddy字节码重写来达到将trace信息存入header的目的
         Field headersField = Request.class.getDeclaredField("headers");
         Field modifiersField = Field.class.getDeclaredField("modifiers");
         modifiersField.setAccessible(true);
