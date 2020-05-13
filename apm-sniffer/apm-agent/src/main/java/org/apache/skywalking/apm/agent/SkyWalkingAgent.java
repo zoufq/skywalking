@@ -18,8 +18,6 @@
 
 package org.apache.skywalking.apm.agent;
 
-import java.lang.instrument.Instrumentation;
-import java.util.List;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.description.NamedElement;
@@ -35,18 +33,14 @@ import org.apache.skywalking.apm.agent.core.conf.Config;
 import org.apache.skywalking.apm.agent.core.conf.SnifferConfigInitializer;
 import org.apache.skywalking.apm.agent.core.logging.api.ILog;
 import org.apache.skywalking.apm.agent.core.logging.api.LogManager;
-import org.apache.skywalking.apm.agent.core.plugin.AbstractClassEnhancePluginDefine;
-import org.apache.skywalking.apm.agent.core.plugin.EnhanceContext;
-import org.apache.skywalking.apm.agent.core.plugin.InstrumentDebuggingClass;
-import org.apache.skywalking.apm.agent.core.plugin.PluginBootstrap;
-import org.apache.skywalking.apm.agent.core.plugin.PluginException;
-import org.apache.skywalking.apm.agent.core.plugin.PluginFinder;
+import org.apache.skywalking.apm.agent.core.plugin.*;
 import org.apache.skywalking.apm.agent.core.plugin.bootstrap.BootstrapInstrumentBoost;
 import org.apache.skywalking.apm.agent.core.plugin.jdk9module.JDK9ModuleExporter;
 
-import static net.bytebuddy.matcher.ElementMatchers.nameContains;
-import static net.bytebuddy.matcher.ElementMatchers.nameStartsWith;
-import static net.bytebuddy.matcher.ElementMatchers.not;
+import java.lang.instrument.Instrumentation;
+import java.util.List;
+
+import static net.bytebuddy.matcher.ElementMatchers.*;
 
 /**
  * The main entrance of sky-walking agent, based on javaagent mechanism.
@@ -56,7 +50,10 @@ public class SkyWalkingAgent {
 
     /**
      * Main entrance. Use byte-buddy transform to enhance all classes, which define in plugins.
+     *
+     * instrumentation 是一个 java.lang.instrument.Instrumentation 的实例，由 JVM 自动传入。*     * java.lang.instrument.Instrumentation 是 instrument 包中定义的一个接口，也是这 个包的核心部分，     * 集中了其中几乎所有的功能方法，例如类定义的转换和操作等等
      */
+
     public static void premain(String agentArgs, Instrumentation instrumentation) throws PluginException {
         final PluginFinder pluginFinder;
         try {
@@ -102,7 +99,7 @@ public class SkyWalkingAgent {
             logger.error(e, "SkyWalking agent open read edge in JDK 9+ failure. Shutting down.");
             return;
         }
-
+        // 拦截所有plugin对应的类并交由plugin处理
         agentBuilder.type(pluginFinder.buildMatch())
                     .transform(new Transformer(pluginFinder))
                     .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)

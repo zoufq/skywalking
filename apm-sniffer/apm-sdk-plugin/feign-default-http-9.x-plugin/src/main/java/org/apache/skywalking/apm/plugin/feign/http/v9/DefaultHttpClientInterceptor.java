@@ -78,6 +78,7 @@ public class DefaultHttpClientInterceptor implements InstanceMethodsAroundInterc
         if (operationName.length() == 0) {
             operationName = "/";
         }
+        // 创建trace span tags等信息
         AbstractSpan span = ContextManager.createExitSpan(operationName, contextCarrier, remotePeer);
         span.setComponent(ComponentsDefine.FEIGN);
         Tags.HTTP.METHOD.set(span, request.method());
@@ -97,6 +98,7 @@ public class DefaultHttpClientInterceptor implements InstanceMethodsAroundInterc
             next = next.next();
             List<String> contextCollection = new LinkedList<String>();
             contextCollection.add(next.getHeadValue());
+            // 将trace信息放入header中
             headers.put(next.getHeadKey(), contextCollection);
         }
         headers.putAll(request.headers());
